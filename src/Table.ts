@@ -7,15 +7,14 @@ export class Table<K, V> {
     this.map = new Map();
   }
 
-  public add(key: K, value: V): boolean {
+  public add(key: K, value: V): void {
     if (this.isFull()) {
-      return false;
+      throw new Error("Table is full!");
     }
     this.map.set(key, value);
-    return true;
   }
 
-  public get(key: K) {
+  public get(key: K): V | undefined {
     return this.map.get(key);
   }
 
@@ -24,6 +23,10 @@ export class Table<K, V> {
   }
 
   public getSize(): number {
+    return this.map.size;
+  }
+
+  public getMaxSize(): number {
     return this.size;
   }
 
