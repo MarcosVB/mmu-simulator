@@ -13,8 +13,18 @@ export class MemoryManagementUnity {
     this.vram = new Memory(vramSize, blockSize);
   }
 
-  public add(process: Process): void {
+  public add(process: Process): boolean {
+    const blocks = this.createBlocks(process);
+
+    if (!this.vram.hasCapacity(blocks.length)) {
+      console.log(
+        `Cannot load process with pid: ${process.getId()}, VRAM is full!`
+      );
+      return false;
+    }
+
     this.vram.addBatch(this.createBlocks(process));
+    return true;
   }
 
   private createBlockKey(pid: number, index: number): string {
@@ -35,6 +45,11 @@ export class MemoryManagementUnity {
 
   public createDemand() {
     const keys = this.vram.getKeys();
+
+    if (keys.length === 0) {
+      console.log(`Cannot create demand, virtual memory is empty!`);
+    }
+
     const key = keys[(Math.random() * keys.length) | 0];
     const block = this.vram.get(key);
     this.load(block.getPid(), block.getId());
