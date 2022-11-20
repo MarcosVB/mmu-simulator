@@ -72,15 +72,8 @@ export class MemoryManagementUnity {
    * Generates a random process block demand
    */
   public createDemand() {
-    const keys = this.vram.getKeys();
-
-    if (keys.length === 0) {
-      console.log(`Cannot create demand, virtual memory is empty!`);
-    }
-
-    const key = keys[(Math.random() * keys.length) | 0];
-    const block = this.vram.get(key);
-    this.load(block.getPid(), block.getId());
+    const { pid, index } = this.getRandomBlockInfo(this.vram);
+    this.load(pid, index);
   }
 
   /**
@@ -129,6 +122,26 @@ export class MemoryManagementUnity {
   }
 
   /**
+   * Get a random block info (pid, index) from memory
+   *
+   * @param memory
+   * @returns
+   */
+  private getRandomBlockInfo(memory: Memory) {
+    const pids = memory.getKeys();
+
+    if (pids.length === 0) {
+      console.log(`Memory has no process loaded!`);
+    }
+
+    const pid = pids[(Math.random() * pids.length) | 0];
+    const indexes = memory.getBlockTable(pid).getKeys();
+    const index = indexes[(Math.random() * indexes.length) | 0];
+
+    return { pid, index };
+  }
+
+  /**
    * Load block into ram (must be loaded in vram)
    *
    * @param pid
@@ -140,7 +153,7 @@ export class MemoryManagementUnity {
 
     this.pageAccessCount++;
 
-    const block = this.ram.get(this.createBlockKey(pid, index));
+    const block = this.ram.get(pid, index);
 
     if (block) {
       console.log(
@@ -155,7 +168,7 @@ export class MemoryManagementUnity {
       this.unload();
     }
 
-    const loadedBlock = this.vram.get(this.createBlockKey(pid, index));
+    const loadedBlock = this.vram.get(pid, index);
 
     if (!loadedBlock) {
       throw new Error(`Could not find block - pid: ${pid}, index: ${index}`);
@@ -182,8 +195,8 @@ export class MemoryManagementUnity {
    */
   private unload() {
     this.pageSwapCount++;
-    const keys = this.ram.getKeys();
-    console.log(`[UNLOAD] Page ${keys[0]}`);
-    this.ram.removeByKey(keys[0]);
+    const { pid, index } = this.getRandomBlockInfo(this.ram);
+    console.log(`[UNLOAD] Page ${pid}:${index}`);
+    this.ram.remove(pid, index);
   }
 }

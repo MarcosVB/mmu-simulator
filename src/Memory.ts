@@ -2,12 +2,10 @@ import { Block } from "./Block";
 import { Table } from "./Table";
 
 export class Memory {
-  private readonly blockMap: Table<string, Block>;
-  private readonly processBlockMap: Table<number, Set<number>>;
+  private readonly table: Table<number, Table<number, Block>>;
 
   constructor(size: number, blockSize: number) {
-    this.blockMap = new Table(size / blockSize);
-    this.processBlockMap = new Table(size / blockSize);
+    this.table = new Table(size / blockSize);
   }
 
   /**
@@ -42,14 +40,11 @@ export class Memory {
    * @param block
    */
   private addBlock(block: Block): void {
-    const processBlocks = this.processBlockMap.get(block.getPid()) ?? new Set();
-    processBlocks.add(block.getId());
+    const blockTable =
+      this.table.get(block.getPid()) ?? new Table(this.table.getMaxSize());
+    blockTable.add(block.getId(), block);
 
-    this.processBlockMap.add(block.getPid(), processBlocks);
-    this.blockMap.add(
-      this.createBlockKey(block.getPid(), block.getId()),
-      block
-    );
+    this.table.add(block.getPid(), blockTable);
   }
 
   /**
@@ -66,11 +61,12 @@ export class Memory {
   /**
    * Get block with key
    *
-   * @param key
+   * @param pid
+   * @param index
    * @returns
    */
-  public get(key: string) {
-    return this.blockMap.get(key);
+  public get(pid: number, index: number) {
+    return this.table.get(pid)?.get(index);
   }
 
   /**
@@ -79,7 +75,7 @@ export class Memory {
    * @returns
    */
   public getKeys() {
-    return this.blockMap.getKeys();
+    return this.table.getKeys();
   }
 
   /**
@@ -88,7 +84,34 @@ export class Memory {
    * @returns
    */
   public getLoad() {
-    return this.blockMap.getSize() / this.blockMap.getMaxSize();
+    return this.getSize() / this.table.getMaxSize();
+  }
+
+  /**
+   * Get block table from process with pid
+   *
+   * @param pid
+   * @returns
+   */
+  public getBlockTable(pid: number) {
+    return this.table.get(pid);
+  }
+
+  /**
+   * Get current memory size (blocks)
+   *
+   * @returns
+   */
+  public getSize() {
+    const pids = this.table.getKeys();
+
+    let size = 0;
+
+    pids.forEach((pid) => {
+      size += this.table.get(pid).getSize();
+    });
+
+    return size;
   }
 
   /**
@@ -98,16 +121,17 @@ export class Memory {
    * @returns
    */
   public hasCapacity(amount: number) {
-    return this.blockMap.getMaxSize() >= this.blockMap.getSize() + amount;
+    return this.table.getMaxSize() >= this.getSize() + amount;
   }
 
   /**
-   * Ckech if memory is full
+   * Check if memory is full
    *
    * @returns
    */
   public isFull() {
-    return this.blockMap.isFull();
+    // TODO: improve this
+    return this.table.getMaxSize() <= this.getSize();
   }
 
   /**
@@ -117,14 +141,10 @@ export class Memory {
    * @param index
    */
   public remove(pid: number, index: number) {
-    const set = this.processBlockMap.get(pid);
-    if (set) {
-      set.delete(index);
-      if (set.size === 0) {
-        this.processBlockMap.remove(pid);
-      }
+    this.table.get(pid)?.remove(index);
+    if (this.table.get(pid)?.getSize() === 0) {
+      this.table.remove(pid);
     }
-    this.blockMap.remove(this.createBlockKey(pid, index));
   }
 
   /**
@@ -143,11 +163,6 @@ export class Memory {
    * @param pid
    */
   public removeByPid(pid: number) {
-    const indexes = this.processBlockMap.get(pid);
-    indexes?.forEach((index) =>
-      this.blockMap.remove(this.createBlockKey(pid, index))
-    );
-
-    this.processBlockMap.remove(pid);
+    this.table.remove(pid);
   }
 }
