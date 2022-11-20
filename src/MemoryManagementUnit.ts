@@ -19,6 +19,12 @@ export class MemoryManagementUnity {
     this.pageSwapCount = 0;
   }
 
+  /**
+   * Load process into vram
+   *
+   * @param process
+   * @returns
+   */
   public add(process: Process): boolean {
     const blocks = this.createBlocks(process);
 
@@ -33,10 +39,23 @@ export class MemoryManagementUnity {
     return true;
   }
 
+  /**
+   * Creates table key for informed pid and index
+   *
+   * @param pid
+   * @param index
+   * @returns
+   */
   private createBlockKey(pid: number, index: number): string {
     return `${pid}:${index}`;
   }
 
+  /**
+   * Break process into blocks to representing it
+   *
+   * @param process
+   * @returns
+   */
   private createBlocks(process: Process): Block[] {
     const blockAmount = Math.ceil(process.getSize() / this.blockSize);
 
@@ -49,6 +68,9 @@ export class MemoryManagementUnity {
     return blocks;
   }
 
+  /**
+   * Generates a random process block demand
+   */
   public createDemand() {
     const keys = this.vram.getKeys();
 
@@ -61,26 +83,58 @@ export class MemoryManagementUnity {
     this.load(block.getPid(), block.getId());
   }
 
+  /**
+   * Get page access count
+   *
+   * @returns
+   */
   public getPageAccessCount() {
     return this.pageAccessCount;
   }
 
+  /**
+   * Get page fault count
+   *
+   * @returns
+   */
   public getPageFaultCount() {
     return this.pageFaultCount;
   }
 
+  /**
+   * Get page swap count
+   *
+   * @returns
+   */
   public getPageSwapCount() {
     return this.pageSwapCount;
   }
 
+  /**
+   * Get current ram load
+   *
+   * @returns
+   */
   public getRamLoad() {
     return this.ram.getLoad();
   }
 
+  /**
+   * Get current vram load
+   *
+   * @returns
+   */
   public getVRamLoad() {
     return this.vram.getLoad();
   }
 
+  /**
+   * Load block into ram (must be loaded in vram)
+   *
+   * @param pid
+   * @param index
+   * @returns
+   */
   public load(pid: number, index: number): Block {
     console.log(`[LOAD]   Page ${this.createBlockKey(pid, index)}`);
 
@@ -113,11 +167,19 @@ export class MemoryManagementUnity {
     return loadedBlock;
   }
 
+  /**
+   * Remove process and it's blocks from memory
+   *
+   * @param pid
+   */
   public remove(pid: number) {
     this.ram.removeByPid(pid);
     this.vram.removeByPid(pid);
   }
 
+  /**
+   * Unloads a block from ram
+   */
   private unload() {
     this.pageSwapCount++;
     const keys = this.ram.getKeys();
