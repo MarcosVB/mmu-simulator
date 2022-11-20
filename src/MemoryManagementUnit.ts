@@ -6,11 +6,17 @@ export class MemoryManagementUnity {
   private readonly blockSize: number;
   private readonly ram: Memory;
   private readonly vram: Memory;
+  private pageAccessCount: number;
+  private pageFaultCount: number;
+  private pageSwapCount: number;
 
   constructor(ramSize: number, vramSize: number, blockSize: number) {
     this.blockSize = blockSize;
     this.ram = new Memory(ramSize, blockSize);
     this.vram = new Memory(vramSize, blockSize);
+    this.pageAccessCount = 0;
+    this.pageFaultCount = 0;
+    this.pageSwapCount = 0;
   }
 
   public add(process: Process): boolean {
@@ -55,6 +61,18 @@ export class MemoryManagementUnity {
     this.load(block.getPid(), block.getId());
   }
 
+  public getPageAccessCount() {
+    return this.pageAccessCount;
+  }
+
+  public getPageFaultCount() {
+    return this.pageFaultCount;
+  }
+
+  public getPageSwapCount() {
+    return this.pageSwapCount;
+  }
+
   public getRamLoad() {
     return this.ram.getLoad();
   }
@@ -65,12 +83,19 @@ export class MemoryManagementUnity {
 
   public load(pid: number, index: number): Block {
     console.log(`[LOAD]   Page ${this.createBlockKey(pid, index)}`);
+
+    this.pageAccessCount++;
+
     const block = this.ram.get(this.createBlockKey(pid, index));
 
     if (block) {
-      console.log(`[LOAD]   Page ${this.createBlockKey(pid, index)} - Already in memory`);
+      console.log(
+        `[LOAD]   Page ${this.createBlockKey(pid, index)} - Already in memory`
+      );
       return block;
     }
+
+    this.pageFaultCount++;
 
     if (this.ram.isFull()) {
       this.unload();
@@ -94,6 +119,7 @@ export class MemoryManagementUnity {
   }
 
   private unload() {
+    this.pageSwapCount++;
     const keys = this.ram.getKeys();
     console.log(`[UNLOAD] Page ${keys[0]}`);
     this.ram.removeByKey(keys[0]);
