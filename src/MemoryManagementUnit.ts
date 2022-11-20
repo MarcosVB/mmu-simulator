@@ -24,7 +24,7 @@ export class MemoryManagementUnity {
 
     if (!this.vram.hasCapacity(blocks.length)) {
       console.log(
-        `Cannot load process with pid: ${process.getId()}, VRAM is full!`
+        `Cannot load process in VRAM -> pid: ${process.getId()}, size: ${process.getSize()}`
       );
       return false;
     }
