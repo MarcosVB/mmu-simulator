@@ -148,7 +148,7 @@ export class MemoryManagementUnity {
    * @param index
    * @returns
    */
-  public load(pid: number, index: number): Block {
+  public load(pid: number, index: number) {
     console.log(`[LOAD]   Page ${this.createBlockKey(pid, index)}`);
 
     this.pageAccessCount++;
@@ -159,7 +159,7 @@ export class MemoryManagementUnity {
       console.log(
         `[LOAD]   Page ${this.createBlockKey(pid, index)} - Already in memory`
       );
-      return block;
+      return;
     }
 
     this.pageFaultCount++;
@@ -177,7 +177,6 @@ export class MemoryManagementUnity {
     this.ram.add(loadedBlock);
 
     console.log(`[LOAD]   Page ${this.createBlockKey(pid, index)} - Success`);
-    return loadedBlock;
   }
 
   /**

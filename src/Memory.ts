@@ -48,17 +48,6 @@ export class Memory {
   }
 
   /**
-   * Creates table key for informed pid and index
-   *
-   * @param pid
-   * @param index
-   * @returns
-   */
-  private createBlockKey(pid: number, index: number): string {
-    return `${pid}:${index}`;
-  }
-
-  /**
    * Get block with key
    *
    * @param pid
@@ -145,16 +134,6 @@ export class Memory {
     if (this.table.get(pid)?.getSize() === 0) {
       this.table.remove(pid);
     }
-  }
-
-  /**
-   * Remove block from memory using key
-   *
-   * @param key
-   */
-  public removeByKey(key: string) {
-    const [pid, index] = key.split(":").map((current) => Number(current));
-    this.remove(pid, index);
   }
 
   /**
