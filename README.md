@@ -37,4 +37,4 @@ In the end a graph will be showing the physical and virtual memory load during e
   * [LOAD] - Logged when a page is requested or successfully loaded, the log references a single page with the key {processId}:{blockId}
   * [UNLOAD] - Logged when a page is selected to be swapped out in order to give space for a new one that was required.
 
-<img src="./docs/images/output.png" style=" width:25% ; height:25% "  >
+<img src="./docs/images/output.png" style=" width:50% ; height:50% "  >
