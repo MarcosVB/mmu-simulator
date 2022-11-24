@@ -1,6 +1,6 @@
 export const BYTE = 1;
-export const KILO_BYTE = BYTE * 1000;
-export const MEGA_BYTE = KILO_BYTE * 1000;
+export const KILO_BYTE = 1000 * BYTE;
+export const MEGA_BYTE = 1000 * KILO_BYTE;
 
 export const BLOCK_SIZE = 8 * KILO_BYTE;
 

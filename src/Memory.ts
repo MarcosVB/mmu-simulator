@@ -2,14 +2,17 @@ import { Block } from "./Block";
 import { Table } from "./Table";
 
 export class Memory {
-  private readonly blockMap: Table<string, Block>;
-  private readonly processBlockMap: Table<number, Set<number>>;
+  private readonly table: Table<number, Table<number, Block>>;
 
   constructor(size: number, blockSize: number) {
-    this.blockMap = new Table(size / blockSize);
-    this.processBlockMap = new Table(size / blockSize);
+    this.table = new Table(size / blockSize);
   }
 
+  /**
+   * Add block into memory
+   *
+   * @param block
+   */
   public add(block: Block): void {
     if (this.isFull()) {
       throw new Error("Memory is full!");
@@ -18,6 +21,11 @@ export class Memory {
     this.addBlock(block);
   }
 
+  /**
+   * Add blocks in batch into memory
+   *
+   * @param blocks
+   */
   public addBatch(blocks: Block[]) {
     if (!this.hasCapacity(blocks.length)) {
       throw new Error("Memory overflow!");
@@ -26,63 +34,114 @@ export class Memory {
     blocks.forEach((block) => this.addBlock(block));
   }
 
+  /**
+   * Add block into memory without capacity check
+   *
+   * @param block
+   */
   private addBlock(block: Block): void {
-    const processBlocks = this.processBlockMap.get(block.getPid()) ?? new Set();
-    processBlocks.add(block.getId());
+    const blockTable =
+      this.table.get(block.getPid()) ?? new Table(this.table.getMaxSize());
+    blockTable.add(block.getId(), block);
 
-    this.processBlockMap.add(block.getPid(), processBlocks);
-    this.blockMap.add(
-      this.createBlockKey(block.getPid(), block.getId()),
-      block
-    );
+    this.table.add(block.getPid(), blockTable);
   }
 
-  private createBlockKey(pid: number, index: number): string {
-    return `${pid}:${index}`;
+  /**
+   * Get block with key
+   *
+   * @param pid
+   * @param index
+   * @returns
+   */
+  public get(pid: number, index: number) {
+    return this.table.get(pid)?.get(index);
   }
 
-  public get(key: string) {
-    return this.blockMap.get(key);
-  }
-
+  /**
+   * Get block keys
+   *
+   * @returns
+   */
   public getKeys() {
-    return this.blockMap.getKeys();
+    return this.table.getKeys();
   }
 
+  /**
+   * Get current memory load
+   *
+   * @returns
+   */
   public getLoad() {
-    return this.blockMap.getSize() / this.blockMap.getMaxSize();
+    return this.getSize() / this.table.getMaxSize();
   }
 
+  /**
+   * Get block table from process with pid
+   *
+   * @param pid
+   * @returns
+   */
+  public getBlockTable(pid: number) {
+    return this.table.get(pid);
+  }
+
+  /**
+   * Get current memory size (blocks)
+   *
+   * @returns
+   */
+  public getSize() {
+    const pids = this.table.getKeys();
+
+    let size = 0;
+
+    pids.forEach((pid) => {
+      size += this.table.get(pid).getSize();
+    });
+
+    return size;
+  }
+
+  /**
+   * Check if memory can load n amount of blocks
+   *
+   * @param amount
+   * @returns
+   */
   public hasCapacity(amount: number) {
-    return this.blockMap.getMaxSize() >= this.blockMap.getSize() + amount;
+    return this.table.getMaxSize() >= this.getSize() + amount;
   }
 
+  /**
+   * Check if memory is full
+   *
+   * @returns
+   */
   public isFull() {
-    return this.blockMap.isFull();
+    // TODO: improve this
+    return this.table.getMaxSize() <= this.getSize();
   }
 
+  /**
+   * Remove block from memory using pid and index
+   *
+   * @param pid
+   * @param index
+   */
   public remove(pid: number, index: number) {
-    const set = this.processBlockMap.get(pid);
-    if (set) {
-      set.delete(index);
-      if (set.size === 0) {
-        this.processBlockMap.remove(pid);
-      }
+    this.table.get(pid)?.remove(index);
+    if (this.table.get(pid)?.getSize() === 0) {
+      this.table.remove(pid);
     }
-    this.blockMap.remove(this.createBlockKey(pid, index));
   }
 
-  public removeByKey(key: string) {
-    const [pid, index] = key.split(":").map((current) => Number(current));
-    this.remove(pid, index);
-  }
-
+  /**
+   * Remove all blocks from memory that have pid process as parent
+   *
+   * @param pid
+   */
   public removeByPid(pid: number) {
-    const indexes = this.processBlockMap.get(pid);
-    indexes?.forEach((index) =>
-      this.blockMap.remove(this.createBlockKey(pid, index))
-    );
-
-    this.processBlockMap.remove(pid);
+    this.table.remove(pid);
   }
 }

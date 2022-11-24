@@ -7,10 +7,20 @@ export class Block {
     this.id = id;
   }
 
+  /**
+   * Get process id
+   *
+   * @returns
+   */
   public getPid(): number {
     return this.pid;
   }
 
+  /**
+   * Get block id
+   *
+   * @returns
+   */
   public getId(): number {
     return this.id;
   }

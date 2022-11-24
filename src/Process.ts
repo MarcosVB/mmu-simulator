@@ -14,10 +14,20 @@ export class Process {
     this.size = size;
   }
 
+  /**
+   * Get process id
+   *
+   * @returns
+   */
   public getId(): number {
     return this.id;
   }
 
+  /**
+   * Get process size
+   *
+   * @returns
+   */
   public getSize(): number {
     return this.size;
   }
